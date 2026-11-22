@@ -1,4 +1,4 @@
-
+```mermaid
 flowchart TD
     A([เข้าเว็บ]) --> B{Login แล้วหรือไม่}
 
@@ -43,3 +43,4 @@ flowchart TD
     EM --> LO
     LO --> CL[ล้างข้อมูล Login]
     CL --> L
+```
