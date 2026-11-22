@@ -1,38 +1,73 @@
-
 import { createContext, useContext, useState } from "react";
-import { login as loginAPI } from "../api/mockApi";
+import { mockLogin } from "../api/mockApi";
 
-// สร้าง Context สำหรับเก็บข้อมูลผู้ใช้งาน
-const AuthContext = createContext(null);
+// สร้าง Context
+const AuthContext = createContext();
 
-// Provider สำหรับแชร์ข้อมูลให้ทุกหน้า
+// โหลดข้อมูลผู้ใช้ที่เคย Login ไว้
+const getSavedUser = () => {
+  try {
+    const savedUser = localStorage.getItem("user");
+    return savedUser ? JSON.parse(savedUser) : null;
+  } catch {
+    localStorage.removeItem("user");
+    return null;
+  }
+};
+
+// Provider สำหรับแชร์ข้อมูลผู้ใช้
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(getSavedUser);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   // ฟังก์ชัน Login
-  async function signIn(username) {
-    const loggedInUser = await loginAPI(username);
+  const login = async (username) => {
+    setLoading(true);
+    setError("");
 
-    setUser(loggedInUser);
+    try {
+      const result = await mockLogin(username);
 
-    return loggedInUser;
-  }
+      setUser(result);
+
+      // บันทึกข้อมูลผู้ใช้ลง localStorage
+      localStorage.setItem("user", JSON.stringify(result));
+
+      return result;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // ฟังก์ชัน Logout
-  function signOut() {
+  const logout = () => {
     setUser(null);
-  }
+    setError("");
+
+    // ลบข้อมูลผู้ใช้ออกจาก localStorage
+    localStorage.removeItem("user");
+  };
 
   return (
     <AuthContext.Provider
-      value={{ user, signIn, signOut }}
+      value={{
+        user,
+        loading,
+        error,
+        login,
+        logout
+      }}
     >
       {children}
     </AuthContext.Provider>
   );
 }
 
-// Hook สำหรับเรียกใช้งานข้อมูล Auth
+// Hook สำหรับเรียกใช้ข้อมูล Context
 export function useAuth() {
   return useContext(AuthContext);
 }

@@ -1,137 +1,92 @@
 
 import { users } from "../data/users";
-import { projects } from "../data/projects";
 import { initialTasks } from "../data/tasks";
 
-// เก็บ Task ไว้ในหน่วยความจำ
+// จำลองข้อมูลในหน่วยความจำ
 let tasks = [...initialTasks];
 
-// จำลองการ Login
-export function login(username) {
+// จำลองการเรียก API
+const delay = (data, error = false) => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
-      const user = users.find(
-        (u) => u.username === username
-      );
-
-      if (!user) {
-        reject(new Error("Username not found"));
-        return;
+      if (error) {
+        reject(new Error(data));
+      } else {
+        resolve(data);
       }
-
-      resolve(user);
     }, 1000);
   });
-}
+};
 
-// ดึงรายการ Task
-export function getTasks(user) {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (!user) {
-        reject(new Error("User not found"));
-        return;
-      }
+// 1. Login
+export const mockLogin = async (username) => {
+  const user = users.find(
+    (u) => u.username === username
+  );
 
-      const result =
-        user.role === "admin"
-          ? tasks
-          : tasks.filter(
-              (task) => task.assignedTo === user.id
-            );
+  if (!user) {
+    return delay("ไม่พบ Username ในระบบ", true);
+  }
 
-      resolve([...result]);
-    }, 800);
-  });
-}
+  return delay(user);
+};
 
-// สร้าง Task ใหม่ (Admin เท่านั้น)
-export function createTask(data, user) {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (user?.role !== "admin") {
-        reject(new Error("Permission denied"));
-        return;
-      }
+// 2. ดึง Task ทั้งหมด (Admin)
+export const mockGetAllTasks = async () => {
+  return delay([...tasks]);
+};
 
-      if (!data.title?.trim()) {
-        reject(new Error("Task title is required"));
-        return;
-      }
+// 3. ดึง Task ของ Employee
+export const mockGetMyTasks = async (employeeId) => {
+  const myTasks = tasks.filter(
+    (task) => task.assignedTo === employeeId
+  );
 
-      const employee = users.find(
-        (u) =>
-          u.id === Number(data.assignedTo) &&
-          u.role === "employee"
-      );
+  return delay(myTasks);
+};
 
-      if (!employee) {
-        reject(new Error("Invalid employee"));
-        return;
-      }
+// 4. สร้าง Task ใหม่ (Admin)
+export const mockCreateTask = async (title, assignedTo) => {
+  if (!title.trim()) {
+    return delay("กรุณากรอกชื่องาน", true);
+  }
 
-      const project = projects.find(
-        (p) => p.id === Number(data.projectId)
-      );
+  const newTask = {
+    id: Math.max(0, ...tasks.map((t) => t.id)) + 1,
+    projectId: 1,
+    title: title.trim(),
+    assignedTo: Number(assignedTo),
+    status: "To Do"
+  };
 
-      if (!project) {
-        reject(new Error("Invalid project"));
-        return;
-      }
+  tasks = [...tasks, newTask];
 
-      const newTask = {
-        id: Math.max(0, ...tasks.map((t) => t.id)) + 1,
-        projectId: Number(data.projectId),
-        title: data.title.trim(),
-        assignedTo: employee.id,
-        status: "To Do"
-      };
+  return delay(newTask);
+};
 
-      tasks = [...tasks, newTask];
+// 5. เปลี่ยนสถานะ Task เป็น Done
+export const mockCompleteTask = async (taskId, employeeId) => {
+  const task = tasks.find(
+    (t) => t.id === taskId
+  );
 
-      resolve(newTask);
-    }, 1000);
-  });
-}
+  if (!task) {
+    return delay("ไม่พบ Task", true);
+  }
 
-// เปลี่ยนสถานะ Task เป็น Done
-export function updateTaskStatus(taskId, user) {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (!user || user.role !== "employee") {
-        reject(new Error("Permission denied"));
-        return;
-      }
+  if (task.assignedTo !== employeeId) {
+    return delay("ไม่มีสิทธิ์แก้ไข Task นี้", true);
+  }
 
-      const task = tasks.find(
-        (t) => t.id === Number(taskId)
-      );
+  if (task.status === "Done") {
+    return delay("Task นี้เสร็จแล้ว", true);
+  }
 
-      if (!task) {
-        reject(new Error("Task not found"));
-        return;
-      }
+  tasks = tasks.map((t) =>
+    t.id === taskId
+      ? { ...t, status: "Done" }
+      : t
+  );
 
-      if (task.assignedTo !== user.id) {
-        reject(new Error("You cannot update this task"));
-        return;
-      }
-
-      if (task.status !== "To Do") {
-        reject(new Error("Task is already Done"));
-        return;
-      }
-
-      const updatedTask = {
-        ...task,
-        status: "Done"
-      };
-
-      tasks = tasks.map((t) =>
-        t.id === updatedTask.id ? updatedTask : t
-      );
-
-      resolve(updatedTask);
-    }, 800);
-  });
-}
+  return delay(tasks.find((t) => t.id === taskId));
+};

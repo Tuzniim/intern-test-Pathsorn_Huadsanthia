@@ -1,22 +1,21 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-function Login() {
-  const { signIn } = useAuth();
+export default function Login() {
+  const [username, setUsername] = useState("");
+
+  const { login, loading, error } = useAuth();
+
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const [username, setUsername] = useState("admin");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const handleLogin = async (e) => {
+    e.preventDefault();
 
-  const handleLogin = async () => {
     try {
-      setLoading(true);
-      setError("");
-
-      const user = await signIn(username);
+      const user = await login(username);
 
       if (user.role === "admin") {
         navigate("/admin");
@@ -24,42 +23,51 @@ function Login() {
         navigate("/employee");
       }
     } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      // แสดง Error จาก AuthContext
     }
   };
 
   return (
     <div className="login-container">
-      <h1>Task Management System</h1>
-      <h2>Login</h2>
+      <div className="login-card">
+        <h1>Task Management</h1>
+        <p>เข้าสู่ระบบเพื่อจัดการงาน</p>
 
-      <label>Select Account</label>
+        {location.state?.message && (
+          <p className="error-message">
+            {location.state.message}
+          </p>
+        )}
 
-      <select
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
-        disabled={loading}
-      >
-        <option value="admin">Admin</option>
-        <option value="employee1">Employee 1</option>
-        <option value="employee2">Employee 2</option>
-      </select>
+        <form onSubmit={handleLogin}>
+          <label>เลือกบัญชีผู้ใช้</label>
 
-      <button onClick={handleLogin} disabled={loading}>
-        {loading ? "Logging in..." : "Login"}
-      </button>
+          <select
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          >
+            <option value="">-- Select User --</option>
+            <option value="admin">Admin</option>
+            <option value="employee1">John</option>
+            <option value="employee2">Sarah</option>
+          </select>
 
-      {loading && <p>Please wait...</p>}
+          <button type="submit" disabled={loading}>
+            {loading ? "กำลังเข้าสู่ระบบ..." : "Login"}
+          </button>
+        </form>
 
-      {error && (
-        <p style={{ color: "red" }}>
-          Error: {error}
-        </p>
-      )}
+        {loading && (
+          <p className="loading-message">
+            กำลังตรวจสอบข้อมูลผู้ใช้...
+          </p>
+        )}
+
+        {error && (
+          <p className="error-message">{error}</p>
+        )}
+      </div>
     </div>
   );
 }
-
-export default Login;

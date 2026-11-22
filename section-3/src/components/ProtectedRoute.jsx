@@ -8,31 +8,22 @@ export default function ProtectedRoute({ allowedRole, children }) {
 
   // กรณียังไม่ได้ Login
   if (!user) {
-    return (
-      <Navigate
-        to="/login"
-        replace
-        state={{ from: location }}
-      />
-    );
+    return <Navigate to="/" replace />;
   }
 
-  // กรณี Role ไม่ตรงกับหน้าที่เข้าถึง
+  // กรณี Role ไม่ตรงกับหน้าที่ต้องการเข้า
   if (user.role !== allowedRole) {
-    const correctPath =
+    const redirectPath =
       user.role === "admin" ? "/admin" : "/employee";
 
     return (
       <Navigate
-        to={correctPath}
+        to={redirectPath}
         replace
-        state={{
-          message: `คุณไม่มีสิทธิ์เข้าถึงหน้านี้ ระบบจึงนำคุณไปยังหน้า ${user.role}`
-        }}
+        state={{ message: "คุณไม่มีสิทธิ์เข้าถึงหน้านี้" }}
       />
     );
   }
 
-  // Role ถูกต้อง อนุญาตให้เข้าหน้าได้
   return children;
 }

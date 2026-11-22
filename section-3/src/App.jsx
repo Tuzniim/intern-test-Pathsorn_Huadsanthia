@@ -1,49 +1,46 @@
 
-import { Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 import Login from "./pages/Login";
-
-function AdminPage() {
-  return <h1>Welcome Admin</h1>;
-}
-
-function EmployeePage() {
-  return <h1>Welcome Employee</h1>;
-}
+import Admin from "./pages/Admin";
+import Employee from "./pages/Employee";
 
 function App() {
   return (
-    <Routes>
-      {/* หน้า Login */}
-      <Route path="/login" element={<Login />} />
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          {/* หน้า Login */}
+          <Route path="/" element={<Login />} />
 
-      {/* หน้า Admin */}
-      <Route
-        path="/admin"
-        element={
-          <ProtectedRoute allowedRole="admin">
-            <AdminPage />
-          </ProtectedRoute>
-        }
-      />
+          {/* หน้า Admin */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute allowedRole="admin">
+                <Admin />
+              </ProtectedRoute>
+            }
+          />
 
-      {/* หน้า Employee */}
-      <Route
-        path="/employee"
-        element={
-          <ProtectedRoute allowedRole="employee">
-            <EmployeePage />
-          </ProtectedRoute>
-        }
-      />
+          {/* หน้า Employee */}
+          <Route
+            path="/employee"
+            element={
+              <ProtectedRoute allowedRole="employee">
+                <Employee />
+              </ProtectedRoute>
+            }
+          />
 
-      {/* หน้าเริ่มต้น */}
-      <Route path="/" element={<Navigate to="/login" replace />} />
-
-      {/* URL ที่ไม่มีอยู่ */}
-      <Route path="*" element={<Navigate to="/login" replace />} />
-    </Routes>
+          {/* URL ที่ไม่มีในระบบ */}
+          <Route path="*" element={<Login />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 
